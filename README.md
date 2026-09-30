@@ -43,7 +43,12 @@ Run the cli:
 nfdl
 
 ```
-Select your desired Nerd Fonts from the menu and let the cli handle the rest. By default, fonts will be downloaded and installed in the `.fonts` directory in your home directory.
+Select your desired Nerd Fonts from the menu and let the cli handle the rest. Fonts are downloaded to the `.fonts` directory in your home directory. After downloading, NFDL asks whether to extract the archives (`[Y/n]`, default Yes).
+
+- `nfdl --extract` extracts automatically without prompting.
+- `nfdl --no-extract` keeps the downloaded archives without extracting or prompting.
+
+Extracted archives are removed after successful extraction.
 
 ## Contributing
 

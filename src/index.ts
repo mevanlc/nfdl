@@ -49,6 +49,12 @@ const allArguments = yargs(hideBin(process.argv))
       required: false,
       boolean: true,
     },
+    "no-extract": {
+      description: "Keep downloaded archives without extracting",
+      requiresArg: false,
+      required: false,
+      boolean: true,
+    },
   }).argv as Options;
 
 export async function download(allArguments: Options) {

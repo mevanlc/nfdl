@@ -120,7 +120,7 @@ export async function selectFonts() {
   const response = await enquirer.prompt<{ fonts: string[] }>({
     type: "autocomplete",
     name: "fonts",
-    message: "Select the fonts to download and extract",
+    message: "Select the fonts to download",
     choices: options,
     sort: true,
     multiple: true,
@@ -138,6 +138,7 @@ export async function selectFonts() {
  */
 export async function downloadAndExtractFonts(selectedFonts: string[], allArguments: Options) {
   const downloadDirectory = getDownloadDirectory(allArguments);
+  const downloadedFonts: { font: string; downloadPath: string }[] = [];
 
   // TODO: Do this parallelly
   for (const font of selectedFonts) {
@@ -147,7 +148,7 @@ export async function downloadAndExtractFonts(selectedFonts: string[], allArgume
 
     try {
       const progressBar = new cliProgress.SingleBar({
-        format: `Downloading and extracting ${font} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
+        format: `Downloading ${font} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
         barCompleteChar: "\u2588",
         barIncompleteChar: "\u2591",
         hideCursor: true,
@@ -171,21 +172,46 @@ export async function downloadAndExtractFonts(selectedFonts: string[], allArgume
       // Stop the progress bar
       progressBar.stop();
 
-      if (allArguments?.extract) {
+      downloadedFonts.push({ font, downloadPath });
+    }
+    catch (error) {
+      if (error instanceof Error)
+        console.error(`❌ Failed to download font '${font}':`, error.message);
+    }
+  }
+
+  let extract = allArguments?.extract;
+  if (extract === undefined && downloadedFonts.length > 0) {
+    const extractionPrompt = {
+      type: "confirm",
+      name: "extract",
+      message: "Extract downloaded archives",
+      initial: true,
+      default: "[Y/n]",
+      separator: ":",
+    };
+    const response = await enquirer.prompt<{ extract: boolean }>(extractionPrompt);
+    extract = response.extract;
+  }
+
+  if (extract) {
+    for (const { font, downloadPath } of downloadedFonts) {
+      try {
         // Extract font
-        await pipeline(fs.createReadStream(downloadPath), unzipper.Extract({ path: downloadDirectory }));
+        const archive = await unzipper.Open.file(downloadPath);
+        await archive.extract({ path: downloadDirectory });
 
         // Remove the downloaded zip file
         await fs.promises.unlink(downloadPath);
       }
-    }
-    catch (error) {
-      if (error instanceof Error)
-        console.error(`❌ Failed to download and extract font '${font}':`, error.message);
+      catch (error) {
+        if (error instanceof Error)
+          console.error(`❌ Failed to extract font '${font}':`, error.message);
+      }
     }
   }
 
-  console.info(`✅ Fonts successfully downloaded and extracted to ${downloadDirectory}`);
+  console.info(`✅ Fonts successfully downloaded${extract ? " and extracted" : ""} to ${downloadDirectory}`);
   process.exit(0);
 }
 

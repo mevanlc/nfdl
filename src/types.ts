@@ -1,6 +1,7 @@
 export interface Options {
   otf?: boolean;
   ttf?: boolean;
+  // Undefined prompts after downloading; false is set by --no-extract.
   extract?: boolean;
   dir?: string;
 }
